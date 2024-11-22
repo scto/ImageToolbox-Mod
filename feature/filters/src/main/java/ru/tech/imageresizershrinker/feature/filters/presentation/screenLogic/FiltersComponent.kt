@@ -51,8 +51,8 @@ import ru.tech.imageresizershrinker.core.domain.saving.model.onSuccess
 import ru.tech.imageresizershrinker.core.domain.utils.smartJob
 import ru.tech.imageresizershrinker.core.filters.domain.FilterProvider
 import ru.tech.imageresizershrinker.core.filters.presentation.model.UiFilter
-import ru.tech.imageresizershrinker.core.filters.presentation.widget.AddFiltersSheetComponent
 import ru.tech.imageresizershrinker.core.filters.presentation.widget.FilterTemplateCreationSheetComponent
+import ru.tech.imageresizershrinker.core.filters.presentation.widget.addFilters.AddFiltersSheetComponent
 import ru.tech.imageresizershrinker.core.ui.transformation.ImageInfoTransformation
 import ru.tech.imageresizershrinker.core.ui.utils.BaseComponent
 import ru.tech.imageresizershrinker.core.ui.utils.navigation.Screen
@@ -107,6 +107,39 @@ class FiltersComponent @AssistedInject internal constructor(
             key = "addMaskSheetComponentFactoryFilters"
         )
     )
+
+    private val _isPickImageFromUrisSheetVisible = mutableStateOf(false)
+    val isPickImageFromUrisSheetVisible by _isPickImageFromUrisSheetVisible
+
+    fun showPickImageFromUrisSheet() {
+        _isPickImageFromUrisSheetVisible.update { true }
+    }
+
+    fun hidePickImageFromUrisSheet() {
+        _isPickImageFromUrisSheetVisible.update { false }
+    }
+
+    private val _isAddFiltersSheetVisible = mutableStateOf(false)
+    val isAddFiltersSheetVisible by _isAddFiltersSheetVisible
+
+    fun showAddFiltersSheet() {
+        _isAddFiltersSheetVisible.update { true }
+    }
+
+    fun hideAddFiltersSheet() {
+        _isAddFiltersSheetVisible.update { false }
+    }
+
+    private val _isReorderSheetVisible = mutableStateOf(false)
+    val isReorderSheetVisible by _isReorderSheetVisible
+
+    fun showReorderSheet() {
+        _isReorderSheetVisible.update { true }
+    }
+
+    fun hideReorderSheet() {
+        _isReorderSheetVisible.update { false }
+    }
 
     private val _canSave = mutableStateOf(false)
     val canSave by _canSave
@@ -318,6 +351,10 @@ class FiltersComponent @AssistedInject internal constructor(
         filterJob = null
         updateCanSave()
         updatePreview()
+    }
+
+    fun addFilterNewInstance(filter: UiFilter<*>) {
+        addFilter(filter.newInstance())
     }
 
     fun addFilter(filter: UiFilter<*>) {
