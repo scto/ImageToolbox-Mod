@@ -53,7 +53,6 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.applyCanvas
@@ -62,7 +61,13 @@ import coil3.toBitmap
 import ru.tech.imageresizershrinker.core.data.utils.safeConfig
 import ru.tech.imageresizershrinker.core.domain.model.IntegerSize
 import ru.tech.imageresizershrinker.core.domain.model.Pt
+import ru.tech.imageresizershrinker.core.domain.model.max
+import ru.tech.imageresizershrinker.core.filters.domain.model.Filter
+import ru.tech.imageresizershrinker.core.filters.presentation.model.UiNativeStackBlurFilter
+import ru.tech.imageresizershrinker.core.filters.presentation.model.UiPixelationFilter
+import ru.tech.imageresizershrinker.core.filters.presentation.model.toUiFilter
 import ru.tech.imageresizershrinker.core.ui.shapes.MaterialStarShape
+import ru.tech.imageresizershrinker.core.ui.utils.helper.ContextUtils.density
 import ru.tech.imageresizershrinker.core.ui.utils.provider.LocalImageLoader
 import ru.tech.imageresizershrinker.feature.draw.domain.DrawLineStyle
 import ru.tech.imageresizershrinker.feature.draw.domain.DrawMode
@@ -70,9 +75,9 @@ import ru.tech.imageresizershrinker.feature.draw.domain.DrawPathMode
 import kotlin.math.roundToInt
 import android.graphics.Path as NativePath
 
-fun Path.copy(): Path = NativePath(this.asAndroidPath()).asComposePath()
+internal fun Path.copy(): Path = NativePath(this.asAndroidPath()).asComposePath()
 
-fun ImageBitmap.clipBitmap(
+internal fun ImageBitmap.clipBitmap(
     path: Path,
     paint: Paint,
 ): ImageBitmap {
@@ -89,7 +94,7 @@ fun ImageBitmap.clipBitmap(
     return bitmap.asImageBitmap()
 }
 
-fun ImageBitmap.overlay(overlay: ImageBitmap): ImageBitmap {
+internal fun ImageBitmap.overlay(overlay: ImageBitmap): ImageBitmap {
     val image = this.asAndroidBitmap()
     return Bitmap.createBitmap(image.width, image.height, image.safeConfig).applyCanvas {
         drawBitmap(image, Matrix(), null)
@@ -98,7 +103,7 @@ fun ImageBitmap.overlay(overlay: ImageBitmap): ImageBitmap {
 }
 
 @Composable
-fun rememberPaint(
+internal fun rememberPaint(
     strokeWidth: Pt,
     isEraserOn: Boolean,
     drawColor: Color,
@@ -234,7 +239,7 @@ fun rememberPathEffectPaint(
     }
 }
 
-fun DrawLineStyle.asPathEffect(
+internal fun DrawLineStyle.asPathEffect(
     canvasSize: IntegerSize,
     strokeWidth: Float,
     context: Context
@@ -272,19 +277,14 @@ fun DrawLineStyle.asPathEffect(
                 createOutline(
                     size = Size(strokeWidth, strokeWidth),
                     layoutDirection = LayoutDirection.Ltr,
-                    density = object : Density {
-                        override val density: Float
-                            get() = context.resources.displayMetrics.density
-                        override val fontScale: Float
-                            get() = context.resources.configuration.fontScale
-                    }
+                    density = context.density
                 )
             )
         }
 
         val path: Path? = when (shape) {
             is Shape -> shape.toPath()
-            is android.graphics.Path -> shape.asComposePath()
+            is NativePath -> shape.asComposePath()
             is Path -> shape
             null -> MaterialStarShape.toPath()
             else -> null
@@ -327,7 +327,7 @@ fun DrawLineStyle.asPathEffect(
 
 @SuppressLint("ComposableNaming")
 @Composable
-fun NativeCanvas.drawRepeatedImageOnPath(
+internal fun NativeCanvas.drawRepeatedImageOnPath(
     drawMode: DrawMode.Image,
     strokeWidth: Pt,
     canvasSize: IntegerSize,
@@ -358,4 +358,36 @@ fun NativeCanvas.drawRepeatedImageOnPath(
             interval = drawMode.repeatingInterval.toPx(canvasSize)
         )
     }
+}
+
+internal fun transformationsForMode(
+    drawMode: DrawMode,
+    canvasSize: IntegerSize
+): List<Filter<*>> = when (drawMode) {
+    is DrawMode.PathEffect.PrivacyBlur -> {
+        listOf(
+            UiNativeStackBlurFilter(
+                value = drawMode.blurRadius.toFloat() / 1000 * max(canvasSize)
+            )
+        )
+    }
+
+    is DrawMode.PathEffect.Pixelation -> {
+        listOf(
+            UiNativeStackBlurFilter(
+                value = 20f / 1000 * max(canvasSize)
+            ),
+            UiPixelationFilter(
+                value = drawMode.pixelSize / 1000 * max(canvasSize)
+            )
+        )
+    }
+
+    is DrawMode.PathEffect.Custom -> {
+        drawMode.filter?.let {
+            listOf(it.toUiFilter())
+        } ?: emptyList()
+    }
+
+    else -> emptyList()
 }

@@ -3,12 +3,12 @@ androidMinSdk = "21"
 androidTargetSdk = "35"
 androidCompileSdk = "35"
 
-versionName = "3.1.0-rc02"
-versionCode = "157"
+versionName = "3.2.0-alpha01"
+versionCode = "160"
 
 jvmTarget = "17"
 
-imageToolboxLibs = "3.2.3"
+imageToolboxLibs = "3.2.4"
 trickle = "1.2.2"
 
 avifCoder = "2.0.9"
@@ -25,7 +25,7 @@ materialIconsExtended = "1.7.5"
 androidx-datastorePreferencesAndroid = "1.1.1"
 appUpdateKtx = "2.1.0"
 appUpdate = "2.1.0"
-shadowGadgets = "2.2.1"
+shadowGadgets = "2.3.0"
 fadingEdges = "1.0.4"
 firebaseCrashlyticsKtx = "19.2.1"
 konfettiCompose = "2.0.4"
@@ -64,7 +64,7 @@ androidx-test-ext-junit = "1.2.1"
 documentfile = "1.0.1"
 uiautomator = "2.3.0"
 androidxMacroBenchmark = "1.4.0-alpha05"
-quickie = "1.13.0"
+quickie = "1.13.1"
 
 material = "1.13.0-alpha08"
 jsoup = "1.18.1"
@@ -75,6 +75,7 @@ zxingAndroidEmbedded = "4.3.0"
 capturable = "3.0.0"
 moshi = "1.15.1"
 aboutlibraries = "11.2.3"
+junit = "4.13.2"
 
 [libraries]
 aboutlibraries-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
@@ -193,6 +194,7 @@ androidx-material = { module = "androidx.compose.material:material", version.ref
 androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 
 desugaring = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugaring" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 image-toolbox-library = { id = "image.toolbox.library", version = "unspecified" }

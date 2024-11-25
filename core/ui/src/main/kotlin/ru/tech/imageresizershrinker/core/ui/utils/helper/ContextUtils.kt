@@ -37,7 +37,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Density
 import androidx.core.app.ActivityCompat
 import androidx.core.app.PendingIntentCompat
 import androidx.core.content.pm.ShortcutInfoCompat
@@ -188,7 +190,7 @@ object ContextUtils {
         DocumentFile.fromSingleUri(this, uri)?.name
     }?.decodeEscaped()
 
-    fun Context.parseImageFromIntent(
+    fun Activity.parseImageFromIntent(
         intent: Intent?,
         onStart: () -> Unit,
         onColdStart: () -> Unit,
@@ -200,10 +202,12 @@ object ContextUtils {
         onWantGithubReview: () -> Unit,
         isOpenEditInsteadOfPreview: Boolean,
     ) {
-        onStart()
-        if (intent?.type != null && !isHasUris) onColdStart()
+        if (intent == null) return
 
-        if (intent?.action == Intent.ACTION_BUG_REPORT) {
+        onStart()
+        if (intent.type != null && !isHasUris) onColdStart()
+
+        if (intent.action == Intent.ACTION_BUG_REPORT) {
             onWantGithubReview()
             return
         }
@@ -211,16 +215,16 @@ object ContextUtils {
         if (intent.getScreenOpeningShortcut(onNavigate)) return
 
         runCatching {
-            val startsWithImage = intent?.type?.startsWith("image/") == true
-            val hasExtraFormats = intent?.clipData?.clipList()
+            val startsWithImage = intent.type?.startsWith("image/") == true
+            val hasExtraFormats = intent.clipData?.clipList()
                 ?.any {
                     it.toString().endsWith(".jxl") || it.toString().endsWith(".qoi")
                 } == true
-            val dataHasExtraFormats = intent?.data.toString().let {
+            val dataHasExtraFormats = intent.data.toString().let {
                 it.endsWith(".jxl") || it.endsWith(".qoi")
             }
 
-            if ((startsWithImage || hasExtraFormats || dataHasExtraFormats) && intent != null) {
+            if ((startsWithImage || hasExtraFormats || dataHasExtraFormats)) {
                 when (intent.action) {
                     Intent.ACTION_VIEW -> {
                         val data = intent.data
@@ -268,7 +272,7 @@ object ContextUtils {
                         }
                     }
                 }
-            } else if (intent?.type != null) {
+            } else if (intent.type != null) {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                 val multiplePdfs = intent.parcelableArrayList<Uri>(Intent.EXTRA_STREAM) != null
 
@@ -475,6 +479,7 @@ object ContextUtils {
 
     suspend fun Context.createScreenShortcut(
         screen: Screen,
+        tint: Color = Color.Unspecified,
         onFailure: (Throwable) -> Unit = {},
     ) = withContext(Dispatchers.Main.immediate) {
         runCatching {
@@ -484,7 +489,7 @@ object ContextUtils {
                     context = context,
                     width = 256,
                     height = 256,
-                    tint = Color(0xFF5F823E)
+                    tint = tint.takeOrElse { Color(0xFF5F823E) }
                 )
 
                 val info = ShortcutInfoCompat.Builder(context, screen.id.toString())
@@ -552,4 +557,12 @@ object ContextUtils {
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(shareIntent)
     }
+
+    val Context.density: Density
+        get() = object : Density {
+            override val density: Float
+                get() = resources.displayMetrics.density
+            override val fontScale: Float
+                get() = resources.configuration.fontScale
+        }
 }
