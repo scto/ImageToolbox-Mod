@@ -3,6 +3,8 @@ package ru.tech.imageresizershrinker.feature.markup_layers.presentation.componen
 import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastCoerceIn
 import ru.tech.imageresizershrinker.core.domain.model.IntegerSize
@@ -16,9 +18,26 @@ class EditBoxState(
     scale: Float = 1f,
     rotation: Float = 0f,
     offset: Offset = Offset.Zero,
+    alpha: Float = 1f,
     isActive: Boolean = false,
     canvasSize: IntegerSize = IntegerSize.Zero
 ) {
+    fun copy(
+        scale: Float = this.scale,
+        rotation: Float = this.rotation,
+        offset: Offset = this.offset,
+        alpha: Float = this.alpha,
+        isActive: Boolean = this.isActive,
+        canvasSize: IntegerSize = this.canvasSize
+    ): EditBoxState = EditBoxState(
+        scale = scale,
+        rotation = rotation,
+        offset = offset,
+        alpha = alpha,
+        isActive = isActive,
+        canvasSize = canvasSize
+    )
+
     var isActive by mutableStateOf(isActive)
         internal set
 
@@ -39,7 +58,7 @@ class EditBoxState(
         rotationChange: Float
     ) {
         rotation += rotationChange
-        scale = (scale * zoomChange).fastCoerceIn(0.5f, 10f)
+        scale = (scale * zoomChange).fastCoerceIn(0.3f, 10f)
         val panChange = (offsetChange * scale).rotateBy(rotation)
 
         val contentSize = contentSize.rotateBy(rotation)
@@ -47,8 +66,8 @@ class EditBoxState(
         val extraWidth = (parentMaxWidth - contentSize.width * scale).absoluteValue
         val extraHeight = (parentMaxHeight - contentSize.height * scale).absoluteValue
 
-        val maxX = extraWidth / 2
-        val maxY = extraHeight / 2
+        val maxX = extraWidth / 2 // + contentSize.width * scale / 2
+        val maxY = extraHeight / 2 // + contentSize.height * scale / 2
 
         offset = Offset(
             x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
@@ -63,6 +82,9 @@ class EditBoxState(
         internal set
 
     var offset by mutableStateOf(offset)
+        internal set
+
+    var alpha by mutableFloatStateOf(alpha)
         internal set
 
     private val _canvasSize = mutableStateOf(IntegerSize.Zero)
@@ -92,6 +114,15 @@ class EditBoxState(
             }
         }
         _canvasSize.value = value
+    }
+}
+
+internal fun DpSize.rotateBy(
+    degrees: Float,
+    density: Density
+): DpSize = with(density) {
+    IntSize(width.roundToPx(), height.roundToPx()).rotateBy(degrees).run {
+        DpSize(width.toDp(), height.toDp())
     }
 }
 

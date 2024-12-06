@@ -35,18 +35,26 @@ internal fun ScreenSelector(
     ResetThemeOnGoBack(component)
 
     val childStack by component.childStack.subscribeAsState()
+    val currentScreen = childStack.items.lastOrNull()?.configuration
 
-    Children(
-        stack = childStack,
-        modifier = Modifier.fillMaxSize(),
-        animation = toolboxPredictiveBackAnimation(
-            backHandler = component.backHandler,
-            onBack = component::navigateBack
-        ),
-        content = { child ->
-            child.instance.Content()
+    SettingsBackdropWrapper(
+        currentScreen = currentScreen,
+        concealBackdropFlow = component.concealBackdropFlow,
+        settingsComponent = component.settingsComponent,
+        children = {
+            Children(
+                stack = childStack,
+                modifier = Modifier.fillMaxSize(),
+                animation = toolboxPredictiveBackAnimation(
+                    backHandler = component.backHandler,
+                    onBack = component::navigateBack
+                ),
+                content = { child ->
+                    child.instance.Content()
+                }
+            )
         }
     )
 
-    ScreenBasedMaxBrightnessEnforcement(childStack.items.lastOrNull()?.configuration)
+    ScreenBasedMaxBrightnessEnforcement(currentScreen)
 }

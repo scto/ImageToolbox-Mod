@@ -19,6 +19,7 @@ package ru.tech.imageresizershrinker.feature.markup_layers.presentation
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,7 +27,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -51,11 +52,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FormatPaint
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.rounded.FormatColorFill
-import androidx.compose.material.icons.rounded.FormatPaint
+import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -75,37 +77,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastAny
 import androidx.core.graphics.applyCanvas
-import coil3.request.ImageRequest
 import com.t8rin.dynamic.theme.LocalDynamicThemeState
 import kotlinx.coroutines.launch
+import net.engawapg.lib.zoomable.rememberZoomState
+import net.engawapg.lib.zoomable.zoomable
 import ru.tech.imageresizershrinker.core.resources.R
 import ru.tech.imageresizershrinker.core.resources.icons.ImageTooltip
-import ru.tech.imageresizershrinker.core.resources.icons.MiniEditLarge
-import ru.tech.imageresizershrinker.core.settings.presentation.model.UiFontFamily
+import ru.tech.imageresizershrinker.core.resources.icons.Stacks
 import ru.tech.imageresizershrinker.core.settings.presentation.provider.rememberAppColorTuple
 import ru.tech.imageresizershrinker.core.ui.theme.outlineVariant
-import ru.tech.imageresizershrinker.core.ui.theme.toColor
+import ru.tech.imageresizershrinker.core.ui.theme.takeColorFromScheme
 import ru.tech.imageresizershrinker.core.ui.utils.content_pickers.Picker
 import ru.tech.imageresizershrinker.core.ui.utils.content_pickers.rememberImagePicker
 import ru.tech.imageresizershrinker.core.ui.utils.helper.ImageUtils.restrict
 import ru.tech.imageresizershrinker.core.ui.utils.helper.asClip
 import ru.tech.imageresizershrinker.core.ui.utils.helper.isPortraitOrientationAsState
 import ru.tech.imageresizershrinker.core.ui.utils.provider.LocalComponentActivity
-import ru.tech.imageresizershrinker.core.ui.utils.provider.SafeLocalContainerColor
 import ru.tech.imageresizershrinker.core.ui.utils.provider.rememberLocalEssentials
 import ru.tech.imageresizershrinker.core.ui.widget.AdaptiveBottomScaffoldLayoutScreen
 import ru.tech.imageresizershrinker.core.ui.widget.buttons.BottomButtonsBlock
@@ -113,33 +113,35 @@ import ru.tech.imageresizershrinker.core.ui.widget.buttons.ShareButton
 import ru.tech.imageresizershrinker.core.ui.widget.controls.SaveExifWidget
 import ru.tech.imageresizershrinker.core.ui.widget.controls.selection.ColorRowSelector
 import ru.tech.imageresizershrinker.core.ui.widget.controls.selection.ImageFormatSelector
-import ru.tech.imageresizershrinker.core.ui.widget.controls.selection.ImageSelector
 import ru.tech.imageresizershrinker.core.ui.widget.dialogs.ExitWithoutSavingDialog
 import ru.tech.imageresizershrinker.core.ui.widget.dialogs.LoadingDialog
 import ru.tech.imageresizershrinker.core.ui.widget.dialogs.OneTimeImagePickingDialog
 import ru.tech.imageresizershrinker.core.ui.widget.dialogs.OneTimeSaveLocationSelectionDialog
 import ru.tech.imageresizershrinker.core.ui.widget.enhanced.EnhancedButton
+import ru.tech.imageresizershrinker.core.ui.widget.enhanced.EnhancedDropdownMenu
 import ru.tech.imageresizershrinker.core.ui.widget.enhanced.EnhancedIconButton
 import ru.tech.imageresizershrinker.core.ui.widget.enhanced.EnhancedModalBottomSheet
-import ru.tech.imageresizershrinker.core.ui.widget.image.Picture
 import ru.tech.imageresizershrinker.core.ui.widget.modifier.container
+import ru.tech.imageresizershrinker.core.ui.widget.modifier.transparencyChecker
 import ru.tech.imageresizershrinker.core.ui.widget.other.TopAppBarEmoji
 import ru.tech.imageresizershrinker.core.ui.widget.preferences.PreferenceItem
 import ru.tech.imageresizershrinker.core.ui.widget.saver.ColorSaver
 import ru.tech.imageresizershrinker.core.ui.widget.sheets.ProcessImagesPreferenceSheet
 import ru.tech.imageresizershrinker.core.ui.widget.text.AutoSizeText
 import ru.tech.imageresizershrinker.core.ui.widget.text.RoundedTextField
-import ru.tech.imageresizershrinker.core.ui.widget.text.RoundedTextFieldColors
 import ru.tech.imageresizershrinker.core.ui.widget.text.TitleItem
-import ru.tech.imageresizershrinker.core.ui.widget.text.TopAppBarTitle
+import ru.tech.imageresizershrinker.core.ui.widget.text.marquee
 import ru.tech.imageresizershrinker.core.ui.widget.utils.AutoContentBasedColors
 import ru.tech.imageresizershrinker.feature.markup_layers.domain.LayerType
-import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.EditBox
-import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.EditBoxState
+import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.AddTextLayerDialog
+import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.AnimatedBorder
+import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.Layer
+import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.LayerContent
 import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.model.BackgroundBehavior
 import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.model.UiMarkupLayer
+import ru.tech.imageresizershrinker.feature.markup_layers.presentation.components.rotateBy
 import ru.tech.imageresizershrinker.feature.markup_layers.presentation.screenLogic.MarkupLayersComponent
-import kotlin.random.Random
+import kotlin.math.roundToInt
 
 @Composable
 fun MarkupLayersContent(
@@ -161,7 +163,7 @@ fun MarkupLayersContent(
         if (component.backgroundBehavior !is BackgroundBehavior.None && component.haveChanges) {
             showExitDialog = true
         } else if (component.backgroundBehavior !is BackgroundBehavior.None) {
-            component.resetDrawBehavior()
+            component.resetState()
             themeState.updateColorTuple(appColorTuple)
         } else {
             component.onGoBack()
@@ -215,43 +217,148 @@ fun MarkupLayersContent(
             }
         },
         title = {
-            TopAppBarTitle(
-                title = stringResource(R.string.markup_layers),
-                input = component.backgroundBehavior.takeIf { it !is BackgroundBehavior.None },
-                isLoading = component.isImageLoading,
-                size = null,
-                originalSize = null
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.marquee()
+            ) {
+                Text(
+                    text = stringResource(R.string.markup_layers)
+                )
+                Badge(
+                    content = {
+                        Text(stringResource(R.string.beta))
+                    },
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onTertiary,
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .padding(bottom = 12.dp)
+                )
+            }
         },
         onGoBack = onBack,
         isPortrait = isPortrait,
         shouldDisableBackHandler = component.backgroundBehavior is BackgroundBehavior.None,
         actions = {
-            EnhancedButton(
-                onClick = {
-                    if (Random.nextInt(0, 3) == 0) {
-                        component.addLayer(
-                            UiMarkupLayer(
-                                type = LayerType.Image.Default,
-                                state = EditBoxState()
+            val layerImagePicker = rememberImagePicker { uri: Uri ->
+                component.deactivateAllLayers()
+                component.addLayer(
+                    UiMarkupLayer(
+                        type = LayerType.Image(uri)
+                    )
+                )
+            }
+            var showTextEnteringDialog by rememberSaveable {
+                mutableStateOf(false)
+            }
+            var showLayersSelection by rememberSaveable {
+                mutableStateOf(false)
+            }
+
+            Box {
+                EnhancedIconButton(
+                    containerColor = takeColorFromScheme {
+                        if (showLayersSelection) tertiary
+                        else Color.Transparent
+                    },
+                    onClick = {
+                        showLayersSelection = !showLayersSelection
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Stacks,
+                        contentDescription = null
+                    )
+                }
+
+                EnhancedDropdownMenu(
+                    expanded = showLayersSelection,
+                    onDismissRequest = { showLayersSelection = false }
+                ) {
+                    component.layers.forEach { (type, state) ->
+                        val density = LocalDensity.current
+                        val size by remember(state.rotation, density) {
+                            derivedStateOf {
+                                DpSize(
+                                    width = 128.dp,
+                                    height = 128.dp
+                                ).rotateBy(
+                                    degrees = state.rotation,
+                                    density = density
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(128.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .transparencyChecker()
+                        ) {
+                            BoxWithConstraints(
+                                modifier = Modifier
+                                    .size(size)
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val scope = this
+
+                                Box(
+                                    modifier = Modifier
+                                        .graphicsLayer(
+                                            rotationZ = state.rotation
+                                        )
+                                        .padding(6.dp)
+                                ) {
+                                    LayerContent(
+                                        modifier = Modifier.sizeIn(
+                                            maxWidth = scope.maxWidth,
+                                            maxHeight = scope.maxHeight
+                                        ),
+                                        type = type,
+                                        textFullSize = scope.constraints.run {
+                                            minOf(maxWidth * 5f, maxHeight * 5f).roundToInt()
+                                        }
+                                    )
+                                }
+                            }
+
+                            AnimatedBorder(
+                                modifier = Modifier.matchParentSize(),
+                                alpha = animateFloatAsState(if (state.isActive) 1f else 0f).value,
+                                scale = state.scale,
+                                shape = RoundedCornerShape(4.dp)
                             )
-                        )
-                    } else {
-                        component.addLayer(
-                            UiMarkupLayer(
-                                type = LayerType.Text.Default.copy(
-                                    color = Random.nextInt(),
-                                    font = UiFontFamily.entries.random().fontRes ?: 0,
-                                    text = "KJFdjkfdfdvnkcvnjcvckvkcvcvjk"
-                                ),
-                                state = EditBoxState()
-                            )
-                        )
+                        }
                     }
                 }
-            ) {
-                Text("PUSH NEW LAYER")
             }
+            EnhancedIconButton(
+                onClick = {
+                    showTextEnteringDialog = true
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.TextFields,
+                    contentDescription = null
+                )
+            }
+            EnhancedIconButton(
+                onClick = layerImagePicker::pickImage
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Image,
+                    contentDescription = null
+                )
+            }
+
+            AddTextLayerDialog(
+                visible = showTextEnteringDialog,
+                onDismiss = { showTextEnteringDialog = false },
+                onAddLayer = {
+                    component.deactivateAllLayers()
+                    component.addLayer(it)
+                }
+            )
         },
         topAppBarPersistentActions = { scaffoldState ->
             if (component.backgroundBehavior == BackgroundBehavior.None) TopAppBarEmoji()
@@ -315,7 +422,12 @@ fun MarkupLayersContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clipToBounds(),
+                    .clipToBounds()
+                    //TODO: Improve
+                    .zoomable(
+                        zoomState = rememberZoomState(maxScale = 10f),
+                        zoomEnabled = !component.layers.fastAny { it.state.isActive }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 BoxWithConstraints(
@@ -445,8 +557,8 @@ fun MarkupLayersContent(
                     PreferenceItem(
                         onClick = pickImage,
                         startIcon = Icons.Outlined.ImageTooltip,
-                        title = stringResource(R.string.draw_on_image),
-                        subtitle = stringResource(R.string.draw_on_image_sub),
+                        title = stringResource(R.string.layers_on_image),
+                        subtitle = stringResource(R.string.layers_on_image_sub),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -454,8 +566,8 @@ fun MarkupLayersContent(
                     PreferenceItem(
                         onClick = { showBackgroundDrawingSetup = true },
                         startIcon = Icons.Outlined.FormatPaint,
-                        title = stringResource(R.string.draw_on_background),
-                        subtitle = stringResource(R.string.draw_on_background_sub),
+                        title = stringResource(R.string.layers_on_background),
+                        subtitle = stringResource(R.string.layers_on_background_sub),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -486,8 +598,8 @@ fun MarkupLayersContent(
             EnhancedModalBottomSheet(
                 title = {
                     TitleItem(
-                        text = stringResource(R.string.draw),
-                        icon = Icons.Rounded.FormatPaint
+                        text = stringResource(R.string.markup_layers),
+                        icon = Icons.Rounded.Stacks
                     )
                 },
                 confirmButton = {
@@ -578,7 +690,6 @@ fun MarkupLayersContent(
             )
         },
         canShowScreenData = component.backgroundBehavior !is BackgroundBehavior.None,
-        showActionsInTopAppBar = false,
         mainContentWeight = 0.65f
     )
 
@@ -591,136 +702,11 @@ fun MarkupLayersContent(
     ExitWithoutSavingDialog(
         onExit = {
             if (component.backgroundBehavior !is BackgroundBehavior.None) {
-                component.resetDrawBehavior()
+                component.resetState()
                 themeState.updateColorTuple(appColorTuple)
             } else component.onGoBack()
         },
         onDismiss = { showExitDialog = false },
         visible = showExitDialog
     )
-}
-
-@Composable
-internal fun BoxWithConstraintsScope.Layer(
-    layer: UiMarkupLayer,
-    onActivate: () -> Unit,
-    onUpdateLayer: (UiMarkupLayer) -> Unit
-) {
-    val type = layer.type
-
-    var showEditDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-    EditBox(
-        state = layer.state,
-        onTap = {
-            if (layer.state.isActive) {
-                showEditDialog = true
-            } else {
-                onActivate()
-            }
-        },
-        content = {
-            when (type) {
-                is LayerType.Image -> {
-                    Picture(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(type.imageData)
-                            .size(1600)
-                            .build(),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.sizeIn(
-                            maxWidth = this@Layer.maxWidth / 2,
-                            maxHeight = this@Layer.maxHeight / 2
-                        ),
-                        showTransparencyChecker = false
-                    )
-                }
-
-                is LayerType.Text -> {
-                    val style = LocalTextStyle.current
-                    val mergedStyle by remember(style, type) {
-                        derivedStateOf {
-                            val fullSize = this@Layer.constraints.run { minOf(maxWidth, maxHeight) }
-
-                            style.copy(
-                                color = type.color.toColor(),
-                                fontSize = (fullSize * type.size / 5).sp,
-                                fontFamily = UiFontFamily.entries.firstOrNull {
-                                    (it.fontRes ?: 0) == type.font
-                                }?.fontFamily,
-                                drawStyle = when (type.style) {
-                                    0 -> Fill
-                                    1 -> Stroke()
-                                    else -> null
-                                }
-                            )
-                        }
-                    }
-                    Text(
-                        text = type.text,
-                        style = mergedStyle,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .background(type.backgroundColor.toColor())
-                    )
-                }
-            }
-        }
-    )
-
-    EnhancedModalBottomSheet(
-        visible = showEditDialog,
-        onDismiss = {
-            showEditDialog = it
-        },
-        title = {
-            TitleItem(
-                icon = Icons.Rounded.MiniEditLarge,
-                text = stringResource(R.string.edit_layer)
-            )
-        },
-        confirmButton = {
-            EnhancedButton(
-                onClick = {
-                    showEditDialog = false
-                }
-            ) {
-                Text(stringResource(R.string.close))
-            }
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(8.dp)
-        ) {
-            when (type) {
-                is LayerType.Image -> {
-                    ImageSelector(
-                        value = type.imageData,
-                        onValueChange = {
-                            onUpdateLayer(layer.copy(type.copy(it)))
-                        },
-                        subtitle = null,
-                        color = Color.Unspecified
-                    )
-                }
-
-                is LayerType.Text -> {
-                    RoundedTextField(
-                        value = type.text,
-                        onValueChange = {
-                            onUpdateLayer(layer.copy(type.copy(text = it)))
-                        },
-                        hint = stringResource(R.string.text),
-                        colors = RoundedTextFieldColors(
-                            isError = false,
-                            containerColor = SafeLocalContainerColor
-                        )
-                    )
-                }
-            }
-        }
-    }
 }

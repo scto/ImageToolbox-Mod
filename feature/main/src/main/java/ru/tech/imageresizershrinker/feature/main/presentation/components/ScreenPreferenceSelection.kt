@@ -20,6 +20,7 @@ package ru.tech.imageresizershrinker.feature.main.presentation.components
 import android.content.ClipboardManager
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
@@ -35,6 +36,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -132,7 +134,7 @@ internal fun RowScope.ScreenPreferenceSelection(
         transitionSpec = {
             fadeIn() togetherWith fadeOut()
         }
-    ) { (hasScreens, isSearching, noFavs) ->
+    ) { (hasScreens, isSearching, noFavorites) ->
         if (hasScreens) {
             Box(
                 modifier = Modifier.fillMaxSize()
@@ -210,47 +212,61 @@ internal fun RowScope.ScreenPreferenceSelection(
                                 shape = RoundedCornerShape(cornerSize),
                                 title = stringResource(screen.title),
                                 subtitle = stringResource(screen.subtitle),
-                                endIcon = if (!settingsState.groupOptionsByTypes) {
-                                    {
-                                        EnhancedIconButton(
-                                            onClick = {
-                                                onToggleFavorite(screen)
-                                            },
-                                            modifier = Modifier.offset(8.dp)
-                                        ) {
-                                            val inFavorite by remember(
-                                                settingsState.favoriteScreenList,
-                                                screen
+                                endIcon = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        AnimatedVisibility(screen.isBetaFeature) {
+                                            Badge(
+                                                content = {
+                                                    Text(stringResource(R.string.beta))
+                                                },
+                                                containerColor = MaterialTheme.colorScheme.tertiary,
+                                                contentColor = MaterialTheme.colorScheme.onTertiary
+                                            )
+                                        }
+                                        if (!settingsState.groupOptionsByTypes) {
+                                            EnhancedIconButton(
+                                                onClick = {
+                                                    onToggleFavorite(screen)
+                                                },
+                                                modifier = Modifier.offset(8.dp)
                                             ) {
-                                                derivedStateOf {
-                                                    settingsState.favoriteScreenList.find { it == screen.id } != null
-                                                }
-                                            }
-                                            AnimatedContent(
-                                                targetState = inFavorite,
-                                                transitionSpec = {
-                                                    (fadeIn() + scaleIn(initialScale = 0.85f))
-                                                        .togetherWith(
-                                                            fadeOut() + scaleOut(
-                                                                targetScale = 0.85f
-                                                            )
-                                                        )
-                                                }
-                                            ) { isInFavorite ->
-                                                val icon by remember(isInFavorite) {
+                                                val inFavorite by remember(
+                                                    settingsState.favoriteScreenList,
+                                                    screen
+                                                ) {
                                                     derivedStateOf {
-                                                        if (isInFavorite) Icons.Rounded.BookmarkRemove
-                                                        else Icons.Rounded.BookmarkBorder
+                                                        settingsState.favoriteScreenList.find { it == screen.id } != null
                                                     }
                                                 }
-                                                Icon(
-                                                    imageVector = icon,
-                                                    contentDescription = null
-                                                )
+                                                AnimatedContent(
+                                                    targetState = inFavorite,
+                                                    transitionSpec = {
+                                                        (fadeIn() + scaleIn(initialScale = 0.85f))
+                                                            .togetherWith(
+                                                                fadeOut() + scaleOut(
+                                                                    targetScale = 0.85f
+                                                                )
+                                                            )
+                                                    }
+                                                ) { isInFavorite ->
+                                                    val icon by remember(isInFavorite) {
+                                                        derivedStateOf {
+                                                            if (isInFavorite) Icons.Rounded.BookmarkRemove
+                                                            else Icons.Rounded.BookmarkBorder
+                                                        }
+                                                    }
+                                                    Icon(
+                                                        imageVector = icon,
+                                                        contentDescription = null
+                                                    )
+                                                }
                                             }
                                         }
                                     }
-                                } else null,
+                                },
                                 startIcon = {
                                     AnimatedContent(
                                         targetState = screen.icon,
@@ -363,7 +379,7 @@ internal fun RowScope.ScreenPreferenceSelection(
                 }
             }
         } else {
-            if (!isSearching && noFavs) {
+            if (!isSearching && noFavorites) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,

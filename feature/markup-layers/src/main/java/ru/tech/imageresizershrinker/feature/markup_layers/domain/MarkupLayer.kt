@@ -29,6 +29,7 @@ data class LayerPosition(
     val rotation: Float = 0f,
     val offsetX: Float = 0f,
     val offsetY: Float = 0f,
+    val alpha: Float = 1f,
     val currentCanvasSize: IntegerSize
 ) {
     companion object {
@@ -76,7 +77,7 @@ sealed interface LayerType {
                 Text(
                     color = -16777216,
                     style = 0,
-                    size = 0.1f,
+                    size = 0.2f,
                     font = 0,
                     backgroundColor = 0,
                     text = "Text"

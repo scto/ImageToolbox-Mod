@@ -36,7 +36,6 @@ import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material.icons.outlined.GifBox
 import androidx.compose.material.icons.outlined.Gradient
 import androidx.compose.material.icons.outlined.Grain
-import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.QrCode
@@ -71,6 +70,7 @@ import ru.tech.imageresizershrinker.core.resources.icons.Jpg
 import ru.tech.imageresizershrinker.core.resources.icons.Jxl
 import ru.tech.imageresizershrinker.core.resources.icons.MiniEditLarge
 import ru.tech.imageresizershrinker.core.resources.icons.MultipleImageEdit
+import ru.tech.imageresizershrinker.core.resources.icons.OverlayAbove
 import ru.tech.imageresizershrinker.core.resources.icons.PaletteSwatch
 import ru.tech.imageresizershrinker.core.resources.icons.Stack
 import ru.tech.imageresizershrinker.core.resources.icons.Toolbox
@@ -85,6 +85,12 @@ sealed class Screen(
     @StringRes val title: Int,
     @StringRes val subtitle: Int
 ) {
+
+    val isBetaFeature: Boolean
+        get() = when (this) {
+            is MarkupLayers -> true
+            else -> false
+        }
 
     val simpleName: String?
         get() = when (this) {
@@ -126,7 +132,7 @@ sealed class Screen(
             is NoiseGeneration -> "Noise_Generation"
             is CollageMaker -> "Collage_Maker"
             is LibrariesInfo -> "Libraries_Info"
-            is MarkupLayers -> "Markup Layers"
+            is MarkupLayers -> "Markup_Layers"
         }
 
     val icon: ImageVector?
@@ -164,13 +170,13 @@ sealed class Screen(
             is FormatConversion -> Icons.Outlined.ImageConvert
             is DocumentScanner -> Icons.Outlined.DocumentScanner
             is ScanQrCode -> Icons.Outlined.QrCode
-            is ImageStacking -> Icons.Outlined.Stack
+            is ImageStacking -> Icons.Outlined.OverlayAbove
             is ImageSplitting -> Icons.Outlined.ContentCut
             ColorTools -> Icons.Outlined.ColorLens
             is WebpTools -> Icons.Rounded.WebpBox
             NoiseGeneration -> Icons.Outlined.Grain
             is CollageMaker -> Icons.Outlined.AutoAwesomeMosaic
-            is MarkupLayers -> Icons.Outlined.Layers //TODO: Icons for this and stacking
+            is MarkupLayers -> Icons.Outlined.Stack
         }
 
     @Serializable
@@ -866,7 +872,7 @@ sealed class Screen(
             typedEntries.flatMap { it.first }.sortedBy { it.id }
         }
 
-        const val FEATURES_COUNT = 54
+        const val FEATURES_COUNT = 55
     }
 }
 
