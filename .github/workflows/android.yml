@@ -45,3 +45,10 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/foss/debug/app-debug.apk
+
+      - name: Upload debug apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-debug
+          path: app/build/outputs/apk/market/debug/app-market-debug.apk
+          
