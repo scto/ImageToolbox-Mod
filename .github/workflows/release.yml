@@ -31,11 +31,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apk-release
-          path: app/build/outputs/apk/foss/release
+          path: app/build/outputs/apk/foss/release/app-foss-release.apk
 
       - name: Upload release apk
         uses: actions/upload-artifact@v4
         with:
           name: apk-release
-          path: app/build/outputs/apk/market/release
+          path: app/build/outputs/apk/market/release/app-market-release.apk
           
